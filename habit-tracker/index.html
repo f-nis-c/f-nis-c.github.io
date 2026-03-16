@@ -593,17 +593,26 @@
  
     // ── USERNAME SETUP ──
     async function saveUsername() {
-      const username = document.getElementById('usernameInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
-      if (!username || username.length < 3) return showMsg('usernameMsg','At least 3 characters, letters/numbers/underscore only.','error');
-      const { error } = await sb.from('profiles').update({ username }).eq('id', currentUser.id);
-      if (error) {
-        if (error.code === '23505') showMsg('usernameMsg','Username taken, try another.','error');
-        else showMsg('usernameMsg', error.message, 'error');
-      } else {
-        currentProfile.username = username;
-        showMainApp();
-      }
-    }
+  const username = document.getElementById('usernameInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  if (!username || username.length < 3) return showMsg('usernameMsg','At least 3 characters, letters/numbers/underscore only.','error');
+  
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return showMsg('usernameMsg', 'Session lost, please sign in again.', 'error');
+  
+  const userId = session.user.id;
+  
+  const { error } = await sb.from('profiles')
+    .upsert({ id: userId, username, display_name: currentProfile?.display_name || '' });
+  
+  if (error) {
+    if (error.code === '23505') showMsg('usernameMsg','Username taken, try another.','error');
+    else showMsg('usernameMsg', error.message, 'error');
+  } else {
+    currentUser = session.user;
+    currentProfile = { id: userId, username, display_name: currentProfile?.display_name || '' };
+    showMainApp();
+  }
+}
  
     // ── INIT ──
     sb.auth.onAuthStateChange(async (event, session) => {
