@@ -564,23 +564,26 @@
       if (error) showMsg('authMsg', error.message, 'error');
     }
  
-    async function signup() {
+   async function signup() {
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
   if (!name || !email || !password) return showMsg('authMsg','Fill in all fields.','error');
-  const { data, error } = await sb.auth.signUp({
-    email, password,
-    options: { data: { display_name: name } }
-  });
+  
+  const { data, error } = await sb.auth.signUp({ email, password });
   if (error) return showMsg('authMsg', error.message, 'error');
-  if (data.user) {
-    await sb.from('profiles').upsert({ 
-      id: data.user.id, 
-      display_name: name 
+  
+  if (data?.user) {
+    const { error: pErr } = await sb.from('profiles').insert({
+      id: data.user.id,
+      display_name: name
     });
+    if (pErr) return showMsg('authMsg', 'Signed up but profile failed: ' + pErr.message, 'error');
+    currentUser = data.user;
+    currentProfile = { id: data.user.id, display_name: name, username: null };
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('usernameScreen').style.display = 'flex';
   }
-  showMsg('authMsg', 'Account created! Signing you in...', 'success');
 }
  
     async function logout() {
