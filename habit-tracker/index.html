@@ -565,17 +565,23 @@
     }
  
     async function signup() {
-      const name = document.getElementById('signupName').value.trim();
-      const email = document.getElementById('signupEmail').value.trim();
-      const password = document.getElementById('signupPassword').value;
-      if (!name || !email || !password) return showMsg('authMsg','Fill in all fields.','error');
-      const { error } = await sb.auth.signUp({
-        email, password,
-        options: { data: { display_name: name } }
-      });
-      if (error) showMsg('authMsg', error.message, 'error');
-      else showMsg('authMsg', 'Account created! Check your email to confirm.', 'success');
-    }
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  if (!name || !email || !password) return showMsg('authMsg','Fill in all fields.','error');
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { data: { display_name: name } }
+  });
+  if (error) return showMsg('authMsg', error.message, 'error');
+  if (data.user) {
+    await sb.from('profiles').upsert({ 
+      id: data.user.id, 
+      display_name: name 
+    });
+  }
+  showMsg('authMsg', 'Account created! Signing you in...', 'success');
+}
  
     async function logout() {
       await sb.auth.signOut();
