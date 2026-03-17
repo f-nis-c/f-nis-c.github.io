@@ -545,13 +545,17 @@
       el.className = 'msg ' + (text ? type + ' show' : '');
     }
  
-    async function login() {
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      if (!email || !password) return showMsg('authMsg','Fill in all fields.','error');
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) showMsg('authMsg', error.message, 'error');
-    }
+async function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return showMsg('authMsg','Fill in all fields.','error');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) return showMsg('authMsg', error.message, 'error');
+  if (data?.user) {
+    currentUser = data.user;
+    await loadProfile();
+  }
+}
  
    async function signup() {
   const name = document.getElementById('signupName').value.trim();
@@ -689,7 +693,7 @@
       </div>`;
   }).join('');
   
-  loadStreaks(); [cite: 160]
+  loadStreaks();
 }
  
     async function loadStreaks() {
