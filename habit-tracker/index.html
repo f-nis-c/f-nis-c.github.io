@@ -70,10 +70,8 @@
       pointer-events: none; z-index: 0; opacity: 0.35;
     }
  
-    /* ── LAYOUT ── */
     .app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 2rem 4rem; }
  
-    /* ── TOPBAR ── */
     .topbar {
       display: flex; align-items: center;
       justify-content: space-between;
@@ -92,7 +90,6 @@
       color: var(--muted);
     }
  
-    /* ── NAV TABS ── */
     .nav-tabs {
       display: flex; gap: 0;
       border: 1px solid var(--border);
@@ -112,11 +109,9 @@
     .nav-tab.active { background: var(--surface); color: var(--accent); }
     .nav-tab:hover:not(.active) { background: var(--surface); color: var(--text); }
  
-    /* ── VIEWS ── */
     .view { display: none; }
     .view.active { display: block; }
  
-    /* ── AUTH ── */
     .auth-wrap {
       min-height: 100vh; display: flex;
       flex-direction: column; align-items: center;
@@ -137,7 +132,6 @@
     .auth-title em { font-style: italic; color: var(--accent); }
     .auth-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
  
-    /* ── FORMS ── */
     .field { margin-bottom: 1rem; }
     .field label {
       display: block; font-size: 0.7rem;
@@ -192,7 +186,6 @@
     .msg.success { border-color: var(--accent2); color: var(--accent2); }
     .msg.show { display: block; }
  
-    /* ── SECTION LABEL ── */
     .section-label {
       font-size: 0.65rem; letter-spacing: 0.2em;
       text-transform: uppercase; color: var(--accent2);
@@ -204,7 +197,6 @@
       height: 1px; background: var(--accent2); opacity: 0.35;
     }
  
-    /* ── ADD HABIT ── */
     .add-habit-row {
       display: flex; gap: 0.5rem; margin-bottom: 2rem;
     }
@@ -219,7 +211,6 @@
     .add-habit-row input:focus { border-color: var(--accent); }
     .add-habit-row input::placeholder { color: var(--muted); }
  
-    /* ── HABIT LIST ── */
     .habits-list { display: flex; flex-direction: column; gap: 1px; }
     .habit-row {
       display: flex; align-items: center;
@@ -254,7 +245,6 @@
     }
     .habit-del:hover { color: var(--danger); }
  
-    /* ── STREAK CALENDAR ── */
     .calendar-wrap { margin-top: 3rem; }
     .calendar-grid {
       display: grid;
@@ -280,8 +270,6 @@
       font-size: 0.6rem; letter-spacing: 0.08em;
       text-align: center; color: var(--muted);
     }
- 
-    /* ── STATS ROW ── */
     .stats-row {
       display: grid; grid-template-columns: repeat(3,1fr);
       gap: 1px; background: var(--border);
@@ -299,7 +287,6 @@
       margin-top: 0.3rem;
     }
  
-    /* ── FRIENDS ── */
     .search-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
     .search-row input {
       flex: 1; background: var(--surface);
@@ -330,7 +317,6 @@
     .user-username { font-size: 0.88rem; color: var(--text); }
     .user-display { font-size: 0.75rem; color: var(--muted); }
  
-    /* ── FEED ── */
     .feed-card {
       border: 1px solid var(--border);
       background: var(--surface);
@@ -359,7 +345,6 @@
     }
     .mini-day.done { background: var(--done); }
  
-    /* ── THEME TOGGLE ── */
     .theme-toggle {
       position: fixed; bottom: 2rem; right: 2rem;
       width: 44px; height: 44px; border-radius: 50%;
@@ -371,7 +356,6 @@
     }
     .theme-toggle:hover { transform: scale(1.1); border-color: var(--accent); }
  
-    /* ── EMPTY STATE ── */
     .empty {
       text-align: center; padding: 3rem 1rem;
       color: var(--muted); font-size: 0.88rem;
@@ -379,21 +363,38 @@
     }
     .empty strong { color: var(--text); display: block; margin-bottom: 0.5rem; font-weight: 500; }
  
-    /* ── LOADING ── */
     .loading {
       text-align: center; padding: 2rem;
       font-size: 0.8rem; letter-spacing: 0.1em;
       text-transform: uppercase; color: var(--muted);
     }
  
-    /* ── USERNAME SETUP ── */
     .username-wrap {
       min-height: 100vh; display: flex;
       flex-direction: column; align-items: center;
       justify-content: center; padding: 2rem;
       position: relative; z-index: 1;
     }
- 
+.habit-img-preview {
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.hidden-file { display: none; }
+.habit-duration {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.edit-input {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 2px 5px;
+}
     @media (max-width: 600px) {
       .app { padding: 0 1rem 3rem; }
       .stats-row { grid-template-columns: 1fr 1fr; }
@@ -407,14 +408,12 @@
   <div class="cursor-ring" id="cursorRing"></div>
   <button class="theme-toggle" id="themeToggle">☀️</button>
  
-  <!-- AUTH SCREEN -->
   <div id="authScreen" class="auth-wrap">
     <div class="auth-card">
       <h1 class="auth-title">Track your<br><em>habits.</em></h1>
       <p class="auth-sub">A personal habit tracker with streaks and a friends feed. Built by Falak.</p>
       <div class="msg" id="authMsg"></div>
  
-      <!-- Login form -->
       <div id="loginForm">
         <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"/></div>
         <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"/></div>
@@ -422,7 +421,6 @@
         <div class="auth-switch">No account? <a onclick="toggleAuthMode()">Sign up</a></div>
       </div>
  
-      <!-- Signup form -->
       <div id="signupForm" style="display:none;">
         <div class="field"><label>Display name</label><input type="text" id="signupName" placeholder="Falak"/></div>
         <div class="field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@email.com"/></div>
@@ -433,7 +431,6 @@
     </div>
   </div>
  
-  <!-- USERNAME SETUP SCREEN -->
   <div id="usernameScreen" class="username-wrap" style="display:none;">
     <div class="auth-card">
       <h1 class="auth-title">One last<br><em>thing.</em></h1>
@@ -443,8 +440,6 @@
       <button class="btn primary full" onclick="saveUsername()">Let's go</button>
     </div>
   </div>
- 
-  <!-- MAIN APP -->
   <div id="mainApp" style="display:none;">
     <div class="app">
       <div class="topbar">
@@ -461,7 +456,6 @@
         <button class="nav-tab" onclick="switchTab('feed')">Feed</button>
       </div>
  
-      <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
         <div class="section-label">Today's habits</div>
         <div class="add-habit-row">
@@ -485,7 +479,6 @@
         </div>
       </div>
  
-      <!-- FRIENDS -->
       <div class="view" id="view-friends">
         <div class="section-label">Find friends</div>
         <div class="search-row">
@@ -498,7 +491,6 @@
         <div id="friendsList"><div class="loading">Loading...</div></div>
       </div>
  
-      <!-- FEED -->
       <div class="view" id="view-feed">
         <div class="section-label">Friends' progress</div>
         <div id="feedList"><div class="loading">Loading feed...</div></div>
@@ -520,7 +512,6 @@
  
     const today = new Date().toISOString().split('T')[0];
  
-    // ── CURSOR ──
     const cur = document.getElementById('cursor');
     const rng = document.getElementById('cursorRing');
     let mx=0,my=0,rx=0,ry=0;
@@ -532,7 +523,6 @@
       requestAnimationFrame(loop);
     })();
  
-    // ── THEME ──
     const themeToggle = document.getElementById('themeToggle');
     let dark = true;
     themeToggle.addEventListener('click',()=>{
@@ -541,7 +531,6 @@
       themeToggle.textContent=dark?'☀️':'🌙';
     });
  
-    // ── AUTH ──
     function toggleAuthMode() {
       const l = document.getElementById('loginForm');
       const s = document.getElementById('signupForm');
@@ -591,7 +580,6 @@
       location.reload();
     }
  
-    // ── USERNAME SETUP ──
     async function saveUsername() {
   const username = document.getElementById('usernameInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   if (!username || username.length < 3) return showMsg('usernameMsg','At least 3 characters, letters/numbers/underscore only.','error');
@@ -614,7 +602,6 @@
   }
 }
  
-    // ── INIT ──
     sb.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         currentUser = session.user;
@@ -646,7 +633,6 @@
       loadDashboard();
     }
  
-    // ── TABS ──
     function switchTab(tab) {
       document.querySelectorAll('.nav-tab').forEach((t,i)=>{
         const tabs = ['dashboard','friends','feed'];
@@ -658,7 +644,6 @@
       if (tab==='feed') loadFeed();
     }
  
-    // ── DASHBOARD ──
     async function loadDashboard() {
       const { data: habits } = await sb.from('habits').select('*').eq('user_id', currentUser.id).order('created_at');
       const { data: logs } = await sb.from('logs').select('*').eq('user_id', currentUser.id).eq('done_on', today);
@@ -669,28 +654,43 @@
     }
  
     function renderHabits() {
-      const list = document.getElementById('habitsList');
-      if (!allHabits.length) {
-        list.innerHTML = '<div class="empty"><strong>No habits yet.</strong>Add your first one above.</div>';
-        document.getElementById('statStreak').textContent = '0';
-        document.getElementById('statTotal').textContent = '0';
-        document.getElementById('statToday').textContent = '0';
-        return;
-      }
-      const doneIds = new Set(todayLogs.map(l=>l.habit_id));
-      list.innerHTML = allHabits.map(h => {
-        const done = doneIds.has(h.id);
-        return `<div class="habit-row">
-          <div class="habit-check ${done?'done':''}" onclick="toggleHabit('${h.id}','${done}')">${done?'✓':''}</div>
-          <span class="habit-name">${escHtml(h.name)}</span>
-          <span class="habit-streak" id="streak-${h.id}">—</span>
-          <button class="habit-del" onclick="deleteHabit('${h.id}')" title="Delete">×</button>
-        </div>`;
-      }).join('');
-      document.getElementById('statTotal').textContent = allHabits.length;
-      document.getElementById('statToday').textContent = doneIds.size;
-      loadStreaks();
-    }
+  const list = document.getElementById('habitsList');
+  if (!allHabits.length) {
+    list.innerHTML = '<div class="empty"><strong>No habits yet.</strong></div>';
+    return;
+  }
+  
+  const doneIds = new Set(todayLogs.map(l => l.habit_id));
+  
+  list.innerHTML = allHabits.map(h => {
+    const done = doneIds.has(h.id);
+    
+    const start = new Date(h.start_date);
+    const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
+    const durationText = diff <= 0 ? 'Started today' : `${diff} days in`;
+
+    return `
+      <div class="habit-row" id="row-${h.id}">
+        <div class="habit-check ${done?'done':''}" onclick="toggleHabit('${h.id}','${done}')">${done?'✓':''}</div>
+        
+        <div class="habit-info" style="flex:1; display:flex; align-items:center; gap:10px;">
+          ${h.image_url ? `<img src="${h.image_url}" class="habit-img-preview" onclick="triggerUpload('${h.id}')">` : 
+            `<button class="btn sm" onclick="triggerUpload('${h.id}')" style="padding:4px">+</button>`}
+          
+          <div style="display:flex; flex-direction:column;">
+            <span class="habit-name" id="name-${h.id}" onclick="editHabitName('${h.id}', '${escHtml(h.name)}')">${escHtml(h.name)}</span>
+            <span class="habit-duration">${durationText}</span>
+          </div>
+        </div>
+
+        <input type="file" id="file-${h.id}" class="hidden-file" accept="image/*" onchange="uploadImage(this, '${h.id}')">
+        <span class="habit-streak" id="streak-${h.id}">—</span>
+        <button class="habit-del" onclick="deleteHabit('${h.id}')">×</button>
+      </div>`;
+  }).join('');
+  
+  loadStreaks(); [cite: 160]
+}
  
     async function loadStreaks() {
       for (const h of allHabits) {
@@ -783,8 +783,47 @@
       renderHabits();
       renderCalendar();
     }
- 
-    // ── FRIENDS ──
+function triggerUpload(id) {
+  document.getElementById(`file-${id}`).click();
+}
+
+async function uploadImage(input, habitId) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${currentUser.id}/${habitId}_${Date.now()}.${fileExt}`;
+  
+  const { data, error } = await sb.storage
+    .from('habit-photos')
+    .upload(fileName, file);
+
+  if (!error) {
+    const { data: urlData } = sb.storage.from('habit-photos').getPublicUrl(fileName);
+    const publicUrl = urlData.publicUrl;
+    
+    await sb.from('habits').update({ image_url: publicUrl }).eq('id', habitId);
+    const habit = allHabits.find(h => h.id === habitId);
+    if (habit) habit.image_url = publicUrl;
+    renderHabits();
+  }
+}
+
+function editHabitName(id, oldName) {
+  const nameEl = document.getElementById(`name-${id}`);
+  nameEl.innerHTML = `<input type="text" class="edit-input" id="edit-${id}" value="${oldName}" onblur="saveHabitName('${id}')">`;
+  document.getElementById(`edit-${id}`).focus();
+}
+
+async function saveHabitName(id) {
+  const newName = document.getElementById(`edit-${id}`).value.trim();
+  if (newName) {
+    await sb.from('habits').update({ name: newName }).eq('id', id);
+    const habit = allHabits.find(h => h.id === id);
+    if (habit) habit.name = newName;
+  }
+  renderHabits();
+}
     async function searchUsers() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       if (!q) return;
@@ -837,7 +876,6 @@
         </div>`).join('');
     }
  
-    // ── FEED ──
     async function loadFeed() {
       const el = document.getElementById('feedList');
       const { data: friendships } = await sb.from('friendships').select('following_id').eq('follower_id',currentUser.id);
