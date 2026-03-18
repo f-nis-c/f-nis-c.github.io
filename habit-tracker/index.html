@@ -97,11 +97,41 @@
     .habit-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); transition: background 0.2s; }
     .habit-row:hover { background: var(--surface2); }
     .habit-check { width: 22px; height: 22px; flex-shrink: 0; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; font-size: 0.8rem; }
-    .habit-check.done { background: var(--done); border-color: var(--done); color: var(--bg); }
-    .habit-name { flex: 1; font-size: 0.9rem; }
-    .habit-streak { font-size: 0.72rem; letter-spacing: 0.08em; color: var(--accent); min-width: 60px; text-align: right; }
+    .habit-check.done { color: var(--bg); }
+    .habit-name { flex: 1; font-size: 0.9rem; cursor: default; }
+    .habit-streak { font-size: 0.72rem; letter-spacing: 0.08em; min-width: 60px; text-align: right; }
+    .habit-settings-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0 0.2rem; transition: color 0.2s; line-height: 1; }
+    .habit-settings-btn:hover { color: var(--text); }
     .habit-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 0.25rem; transition: color 0.2s; }
     .habit-del:hover { color: var(--danger); }
+    .habit-meta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .habit-duration { font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; letter-spacing: 0.04em; }
+    .habit-img { width: 32px; height: 32px; border-radius: 3px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; transition: border-color 0.2s; }
+    .habit-img:hover { border-color: var(--accent); }
+    .habit-img-add { width: 32px; height: 32px; border: 1px dashed var(--border); background: transparent; color: var(--muted); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.2s, color 0.2s; }
+    .habit-img-add:hover { border-color: var(--accent); color: var(--accent); }
+    .hidden-file { display: none; }
+    .habit-name-edit { background: var(--bg); border: 1px solid var(--accent); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 300; padding: 2px 6px; outline: none; width: 100%; }
+ 
+    /* settings panel */
+    .habit-panel { background: var(--surface2); border: 1px solid var(--border); border-top: none; padding: 1.25rem 1.5rem; display: none; }
+    .habit-panel.open { display: block; }
+    .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .panel-field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .panel-label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+    .panel-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none; transition: border-color 0.2s; width: 100%; }
+    .panel-input:focus { border-color: var(--accent); }
+    .color-swatches { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.25rem; }
+    .color-swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s, border-color 0.15s; flex-shrink: 0; }
+    .color-swatch:hover { transform: scale(1.2); }
+    .color-swatch.active { border-color: var(--text); transform: scale(1.15); }
+ 
+    /* timer */
+    .habit-timer-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+    .timer-display { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--text); min-width: 60px; }
+    .timer-mins-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; padding: 0.4rem 0.6rem; outline: none; width: 70px; transition: border-color 0.2s; }
+    .timer-mins-input:focus { border-color: var(--accent); }
+    .timer-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
  
     /* calendar */
     .calendar-wrap { margin-top: 3rem; }
@@ -387,6 +417,9 @@
       renderCalendar();
     }
  
+    const COLORS = ['#7eb8a4','#c8b99a','#c47a6a','#7b9ec4','#a47bc4','#c4a47b','#7bc4b0','#c47b9e','#9ec47b','#c4c47b'];
+    const timers = {};
+ 
     function renderHabits() {
       const list = document.getElementById('habitsList');
       if (!allHabits.length) {
@@ -395,18 +428,167 @@
         return;
       }
       const doneIds = new Set(todayLogs.map(l=>l.habit_id));
+      const todayDurations = {};
+      todayLogs.forEach(l=>{ if(l.duration_minutes) todayDurations[l.habit_id]=l.duration_minutes; });
+ 
       list.innerHTML = allHabits.map(h=>{
         const done = doneIds.has(h.id);
-        return `<div class="habit-row">
-          <div class="habit-check ${done?'done':''}" onclick="toggleHabit('${h.id}',${done})">${done?'✓':''}</div>
-          <span class="habit-name">${esc(h.name)}</span>
-          <span class="habit-streak" id="streak-${h.id}">—</span>
-          <button class="habit-del" onclick="deleteHabit('${h.id}')">×</button>
+        const color = h.color || '#7eb8a4';
+        const startDate = h.start_date ? new Date(h.start_date+'T12:00:00') : new Date(h.created_at);
+        const diff = Math.floor((new Date() - startDate) / (1000*60*60*24));
+        const durText = diff <= 0 ? 'Started today' : `${diff} day${diff===1?'':'s'} in`;
+        const imgEl = h.image_url
+          ? `<img src="${esc(h.image_url)}" class="habit-img" onclick="triggerUpload('${h.id}')" title="Change image"/>`
+          : `<button class="habit-img-add" onclick="triggerUpload('${h.id}')" title="Add image">+</button>`;
+        const loggedMins = todayDurations[h.id] || 0;
+        return `
+        <div>
+          <div class="habit-row" id="row-${h.id}">
+            <div class="habit-check ${done?'done':''}" style="${done?`background:${color};border-color:${color};`:`border-color:${color}40;`}" onclick="toggleHabit('${h.id}',${done})">${done?'✓':''}</div>
+            ${imgEl}
+            <input type="file" id="file-${h.id}" class="hidden-file" accept="image/*" onchange="uploadImage(this,'${h.id}')"/>
+            <div class="habit-meta">
+              <span class="habit-name" id="name-${h.id}" ondblclick="editHabitName('${h.id}')" title="Double-click to edit">${esc(h.name)}</span>
+              <span class="habit-duration">${durText}${loggedMins?' · '+loggedMins+'m logged':''}</span>
+            </div>
+            <span class="habit-streak" id="streak-${h.id}" style="color:${color}">—</span>
+            <button class="habit-settings-btn" onclick="togglePanel('${h.id}')" title="Settings">⚙</button>
+            <button class="habit-del" onclick="deleteHabit('${h.id}')">×</button>
+          </div>
+          <div class="habit-panel" id="panel-${h.id}">
+            <div class="panel-grid">
+              <div class="panel-field">
+                <span class="panel-label">Habit name</span>
+                <input class="panel-input" id="pname-${h.id}" value="${esc(h.name)}" onblur="savePanelName('${h.id}')"/>
+              </div>
+              <div class="panel-field">
+                <span class="panel-label">Start date</span>
+                <input type="date" class="panel-input" id="pdate-${h.id}" value="${h.start_date||today}" onchange="savePanelDate('${h.id}')"/>
+              </div>
+            </div>
+            <div class="panel-field" style="margin-top:0.85rem;">
+              <span class="panel-label">Streak colour</span>
+              <div class="color-swatches">
+                ${COLORS.map(c=>`<div class="color-swatch ${c===color?'active':''}" style="background:${c}" onclick="saveColor('${h.id}','${c}')" title="${c}"></div>`).join('')}
+              </div>
+            </div>
+            <div class="habit-timer-row">
+              <span class="timer-label">Timer</span>
+              <div class="timer-display" id="timer-${h.id}">00:00</div>
+              <button class="btn sm primary" id="timerbtn-${h.id}" onclick="toggleTimer('${h.id}')">Start</button>
+              <button class="btn sm" onclick="resetTimer('${h.id}')">Reset</button>
+              <span class="timer-label" style="margin-left:0.5rem;">or log</span>
+              <input type="number" class="timer-mins-input" id="logmins-${h.id}" placeholder="mins" min="1" max="480" value="${loggedMins||''}"/>
+              <button class="btn sm" onclick="logMinutes('${h.id}')">Log</button>
+            </div>
+          </div>
         </div>`;
       }).join('');
       document.getElementById('statTotal').textContent = allHabits.length;
       document.getElementById('statToday').textContent = doneIds.size;
       loadStreaks();
+    }
+ 
+    function togglePanel(id) {
+      const panel = document.getElementById('panel-'+id);
+      panel.classList.toggle('open');
+    }
+ 
+    function triggerUpload(id) { document.getElementById('file-'+id).click(); }
+ 
+    async function uploadImage(input, habitId) {
+      const file = input.files[0]; if (!file) return;
+      const ext = file.name.split('.').pop();
+      const path = `${USER.id}/${habitId}_${Date.now()}.${ext}`;
+      const {error} = await sb.storage.from('habit-photos').upload(path, file, {upsert:true});
+      if (error) return;
+      const {data:urlData} = sb.storage.from('habit-photos').getPublicUrl(path);
+      await sb.from('habits').update({image_url:urlData.publicUrl}).eq('id',habitId);
+      const h = allHabits.find(h=>h.id===habitId);
+      if (h) h.image_url = urlData.publicUrl;
+      renderHabits();
+    }
+ 
+    function editHabitName(id) {
+      const el = document.getElementById('name-'+id);
+      const current = allHabits.find(h=>h.id===id)?.name||'';
+      el.innerHTML=`<input class="habit-name-edit" id="edit-${id}" value="${esc(current)}" onblur="saveHabitName('${id}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${esc(current)}';this.blur();}"/>`;
+      const inp = document.getElementById('edit-'+id);
+      inp.focus(); inp.select();
+    }
+ 
+    async function saveHabitName(id) {
+      const inp = document.getElementById('edit-'+id); if (!inp) return;
+      const newName = inp.value.trim();
+      if (newName) { await sb.from('habits').update({name:newName}).eq('id',id); const h=allHabits.find(h=>h.id===id); if(h)h.name=newName; }
+      renderHabits();
+    }
+ 
+    async function savePanelName(id) {
+      const val = document.getElementById('pname-'+id)?.value.trim();
+      if (!val) return;
+      await sb.from('habits').update({name:val}).eq('id',id);
+      const h = allHabits.find(h=>h.id===id); if(h)h.name=val;
+      const el = document.getElementById('name-'+id); if(el) el.textContent=val;
+    }
+ 
+    async function savePanelDate(id) {
+      const val = document.getElementById('pdate-'+id)?.value;
+      if (!val) return;
+      await sb.from('habits').update({start_date:val}).eq('id',id);
+      const h = allHabits.find(h=>h.id===id); if(h)h.start_date=val;
+      renderHabits();
+    }
+ 
+    async function saveColor(id, color) {
+      await sb.from('habits').update({color}).eq('id',id);
+      const h = allHabits.find(h=>h.id===id); if(h)h.color=color;
+      renderHabits();
+      setTimeout(()=>{ const p=document.getElementById('panel-'+id); if(p)p.classList.add('open'); },10);
+    }
+ 
+    // ── TIMER ──
+    function toggleTimer(habitId) {
+      if (timers[habitId]?.running) {
+        clearInterval(timers[habitId].interval);
+        timers[habitId].running = false;
+        document.getElementById('timerbtn-'+habitId).textContent = 'Resume';
+      } else {
+        if (!timers[habitId]) timers[habitId] = {secs:0, running:false, interval:null};
+        timers[habitId].running = true;
+        timers[habitId].interval = setInterval(()=>{
+          timers[habitId].secs++;
+          const s=timers[habitId].secs;
+          const el=document.getElementById('timer-'+habitId);
+          if(el) el.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+          // auto-fill log mins every minute
+          const minsEl=document.getElementById('logmins-'+habitId);
+          if(minsEl) minsEl.value=Math.floor(s/60)||'';
+        },1000);
+        document.getElementById('timerbtn-'+habitId).textContent = 'Pause';
+      }
+    }
+ 
+    function resetTimer(habitId) {
+      if (timers[habitId]) { clearInterval(timers[habitId].interval); delete timers[habitId]; }
+      const el=document.getElementById('timer-'+habitId); if(el) el.textContent='00:00';
+      const btn=document.getElementById('timerbtn-'+habitId); if(btn) btn.textContent='Start';
+      const minsEl=document.getElementById('logmins-'+habitId); if(minsEl) minsEl.value='';
+    }
+ 
+    async function logMinutes(habitId) {
+      const val = parseInt(document.getElementById('logmins-'+habitId)?.value);
+      if (!val||val<1) return;
+      const log = todayLogs.find(l=>l.habit_id===habitId);
+      if (log) {
+        await sb.from('logs').update({duration_minutes:val}).eq('id',log.id);
+        log.duration_minutes = val;
+      } else {
+        const {data} = await sb.from('logs').insert({habit_id:habitId,user_id:USER.id,done_on:today,duration_minutes:val}).select().single();
+        if(data) todayLogs.push(data);
+      }
+      renderHabits();
+      setTimeout(()=>{ const p=document.getElementById('panel-'+habitId); if(p)p.classList.add('open'); },10);
     }
  
     async function loadStreaks() {
@@ -534,3 +716,4 @@
   </script>
 </body>
 </html>
+ 
