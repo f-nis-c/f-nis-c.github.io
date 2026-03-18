@@ -1,2 +1,536 @@
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-currently under work, please hold.
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Habits · Falak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    [data-theme="dark"] {
+      --bg: #0c0c0e; --surface: #131316; --surface2: #18181c;
+      --border: #1f1f24; --text: #e8e6df; --muted: #6b6b72;
+      --accent: #c8b99a; --accent2: #7eb8a4; --danger: #c47a6a; --done: #7eb8a4;
+    }
+    [data-theme="light"] {
+      --bg: #f5f3ee; --surface: #ebe8e1; --surface2: #e2ded6;
+      --border: #d8d4cc; --text: #1a1a1c; --muted: #7a7872;
+      --accent: #8a6e4b; --accent2: #3a7d6a; --danger: #a85444; --done: #3a7d6a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; transition: background 0.4s, color 0.4s; cursor: none;
+    }
+    .cursor { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); }
+    .cursor-ring { width: 32px; height: 32px; border: 1px solid rgba(200,185,154,0.35); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: all 0.14s ease; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.35; }
+ 
+    /* screens */
+    .screen { display: none; position: relative; z-index: 1; }
+    .screen.active { display: flex; }
+    #authScreen, #usernameScreen { min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+    #mainApp { display: none; }
+    #mainApp.active { display: block; }
+ 
+    /* auth card */
+    .auth-card { width: min(420px, 100%); border: 1px solid var(--border); background: var(--surface); padding: 3rem; }
+    .auth-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1.1; margin-bottom: 0.5rem; }
+    .auth-title em { font-style: italic; color: var(--accent); }
+    .auth-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
+ 
+    /* form */
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+    .field input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 300; padding: 0.75rem 1rem; outline: none; transition: border-color 0.2s; }
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+ 
+    /* buttons */
+    .btn { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.75rem 1.5rem; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+    .btn:hover { color: var(--text); background: var(--surface2); }
+    .btn.primary { border-color: var(--accent); color: var(--accent); }
+    .btn.primary:hover { background: var(--accent); color: var(--bg); }
+    .btn.danger { border-color: var(--danger); color: var(--danger); }
+    .btn.danger:hover { background: var(--danger); color: var(--bg); }
+    .btn.full { width: 100%; }
+    .btn.sm { padding: 0.4rem 0.9rem; font-size: 0.68rem; }
+ 
+    .auth-switch { margin-top: 1.25rem; text-align: center; font-size: 0.8rem; color: var(--muted); }
+    .auth-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
+    .auth-switch a:hover { text-decoration: underline; }
+ 
+    .msg { font-size: 0.78rem; padding: 0.6rem 1rem; border: 1px solid var(--border); margin-bottom: 1rem; display: none; }
+    .msg.error { border-color: var(--danger); color: var(--danger); display: block; }
+    .msg.success { border-color: var(--accent2); color: var(--accent2); display: block; }
+ 
+    /* app layout */
+    .app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 2rem 4rem; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 1.75rem 0 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 2.5rem; }
+    .topbar-logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--accent); text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 1rem; }
+    .topbar-user { font-size: 0.75rem; letter-spacing: 0.08em; color: var(--muted); }
+ 
+    .nav-tabs { display: flex; border: 1px solid var(--border); margin-bottom: 2.5rem; }
+    .nav-tab { flex: 1; padding: 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; border: none; border-right: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .nav-tab:last-child { border-right: none; }
+    .nav-tab.active { background: var(--surface); color: var(--accent); }
+    .nav-tab:hover:not(.active) { background: var(--surface); color: var(--text); }
+ 
+    .view { display: none; }
+    .view.active { display: block; }
+ 
+    .section-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent2); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; }
+    .section-label::after { content: ''; flex: 1; max-width: 50px; height: 1px; background: var(--accent2); opacity: 0.35; }
+ 
+    /* habits */
+    .add-habit-row { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+    .add-habit-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 300; padding: 0.7rem 1rem; outline: none; transition: border-color 0.2s; }
+    .add-habit-row input:focus { border-color: var(--accent); }
+    .add-habit-row input::placeholder { color: var(--muted); }
+ 
+    .habits-list { display: flex; flex-direction: column; gap: 1px; }
+    .habit-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); transition: background 0.2s; }
+    .habit-row:hover { background: var(--surface2); }
+    .habit-check { width: 22px; height: 22px; flex-shrink: 0; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; font-size: 0.8rem; }
+    .habit-check.done { background: var(--done); border-color: var(--done); color: var(--bg); }
+    .habit-name { flex: 1; font-size: 0.9rem; }
+    .habit-streak { font-size: 0.72rem; letter-spacing: 0.08em; color: var(--accent); min-width: 60px; text-align: right; }
+    .habit-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 0.25rem; transition: color 0.2s; }
+    .habit-del:hover { color: var(--danger); }
+ 
+    /* calendar */
+    .calendar-wrap { margin-top: 3rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 1rem; }
+    .cal-day { aspect-ratio: 1; border-radius: 2px; background: var(--surface); border: 1px solid var(--border); transition: background 0.2s; }
+    .cal-day.partial { background: rgba(126,184,164,0.25); border-color: rgba(126,184,164,0.4); }
+    .cal-day.full { background: var(--done); border-color: var(--done); }
+    .cal-day.today { outline: 1px solid var(--accent); outline-offset: 1px; }
+    .cal-labels { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-top: 0.4rem; }
+    .cal-label { font-size: 0.6rem; letter-spacing: 0.08em; text-align: center; color: var(--muted); }
+ 
+    /* stats */
+    .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 2rem; }
+    .stat { background: var(--bg); padding: 1.25rem 1rem; }
+    .stat-num { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--accent); line-height: 1; }
+    .stat-lbl { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
+ 
+    /* friends */
+    .search-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .search-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 300; padding: 0.7rem 1rem; outline: none; transition: border-color 0.2s; }
+    .search-row input:focus { border-color: var(--accent); }
+    .search-row input::placeholder { color: var(--muted); }
+    .user-result { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); margin-bottom: 1px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--accent); font-weight: 500; flex-shrink: 0; }
+    .user-info { flex: 1; }
+    .user-username { font-size: 0.88rem; color: var(--text); }
+    .user-display { font-size: 0.75rem; color: var(--muted); }
+ 
+    /* feed */
+    .feed-card { border: 1px solid var(--border); background: var(--surface); padding: 1.5rem; margin-bottom: 1px; }
+    .feed-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .feed-name { font-size: 0.9rem; color: var(--text); font-weight: 500; }
+    .feed-username { font-size: 0.75rem; color: var(--muted); }
+    .feed-habits { display: flex; flex-direction: column; gap: 0.75rem; }
+    .feed-habit-name { font-size: 0.78rem; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; }
+    .mini-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; }
+    .mini-day { aspect-ratio: 1; border-radius: 1px; background: var(--border); }
+    .mini-day.done { background: var(--done); }
+ 
+    /* misc */
+    .theme-toggle { position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: background 0.3s, border-color 0.3s, transform 0.2s; z-index: 200; }
+    .theme-toggle:hover { transform: scale(1.1); border-color: var(--accent); }
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.88rem; line-height: 1.7; border: 1px dashed var(--border); }
+    .empty strong { color: var(--text); display: block; margin-bottom: 0.5rem; font-weight: 500; }
+    .loading { text-align: center; padding: 2rem; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+ 
+    @media (max-width: 600px) {
+      .app { padding: 0 1rem 3rem; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .mini-grid { grid-template-columns: repeat(7, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+  <button class="theme-toggle" id="themeToggle">☀️</button>
+ 
+  <!-- AUTH -->
+  <div id="authScreen" class="screen active">
+    <div class="auth-card">
+      <h1 class="auth-title">Track your<br><em>habits.</em></h1>
+      <p class="auth-sub">A personal habit tracker with streaks and a friends feed. Built by Falak.</p>
+      <div id="authMsg" class="msg"></div>
+      <div id="loginForm">
+        <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"/></div>
+        <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"/></div>
+        <button class="btn primary full" onclick="doLogin()">Sign in</button>
+        <div class="auth-switch">No account? <a onclick="toggleAuth()">Sign up</a></div>
+      </div>
+      <div id="signupForm" style="display:none;">
+        <div class="field"><label>Display name</label><input type="text" id="signupName" placeholder="Falak"/></div>
+        <div class="field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@email.com"/></div>
+        <div class="field"><label>Password</label><input type="password" id="signupPassword" placeholder="min 6 characters"/></div>
+        <button class="btn primary full" onclick="doSignup()">Create account</button>
+        <div class="auth-switch">Already have one? <a onclick="toggleAuth()">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- USERNAME -->
+  <div id="usernameScreen" class="screen" style="display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:2rem;">
+    <div class="auth-card">
+      <h1 class="auth-title">One last<br><em>thing.</em></h1>
+      <p class="auth-sub">Pick a username so friends can find you.</p>
+      <div id="usernameMsg" class="msg"></div>
+      <div class="field"><label>Username</label><input type="text" id="usernameInput" placeholder="falak_builds" maxlength="24"/></div>
+      <button class="btn primary full" onclick="doSaveUsername()">Let's go</button>
+    </div>
+  </div>
+ 
+  <!-- MAIN APP -->
+  <div id="mainApp">
+    <div class="app">
+      <div class="topbar">
+        <a href="/" class="topbar-logo">F.N.C</a>
+        <div class="topbar-right">
+          <span class="topbar-user" id="topbarUser"></span>
+          <button class="btn sm" onclick="doLogout()">Sign out</button>
+        </div>
+      </div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="nav-tab" onclick="switchTab('friends')">Friends</button>
+        <button class="nav-tab" onclick="switchTab('feed')">Feed</button>
+      </div>
+      <div class="view active" id="view-dashboard">
+        <div class="section-label">Today's habits</div>
+        <div class="add-habit-row">
+          <input type="text" id="newHabitInput" placeholder="Add a new habit..." onkeydown="if(event.key==='Enter')addHabit()"/>
+          <button class="btn primary" onclick="addHabit()">Add</button>
+        </div>
+        <div class="habits-list" id="habitsList"><div class="loading">Loading...</div></div>
+        <div class="calendar-wrap">
+          <div class="section-label">Last 28 days</div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="cal-labels" id="calLabels"></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-num" id="statStreak">—</div><div class="stat-lbl">Current streak</div></div>
+          <div class="stat"><div class="stat-num" id="statTotal">—</div><div class="stat-lbl">Habits tracked</div></div>
+          <div class="stat"><div class="stat-num" id="statToday">—</div><div class="stat-lbl">Done today</div></div>
+        </div>
+      </div>
+      <div class="view" id="view-friends">
+        <div class="section-label">Find friends</div>
+        <div class="search-row">
+          <input type="text" id="searchInput" placeholder="Search by username..." onkeydown="if(event.key==='Enter')searchUsers()"/>
+          <button class="btn primary" onclick="searchUsers()">Search</button>
+        </div>
+        <div id="searchResults"></div>
+        <div class="section-label" style="margin-top:2rem;">Your friends</div>
+        <div id="friendsList"><div class="loading">Loading...</div></div>
+      </div>
+      <div class="view" id="view-feed">
+        <div class="section-label">Friends' progress</div>
+        <div id="feedList"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+ 
+  <script>
+    const SUPABASE_URL = 'https://rgazwcbydpzayjqbmwgj.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_XNNhMZOnybYdephTnD2NSw_gE8E_j_3';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+ 
+    let USER = null;
+    let PROFILE = null;
+    let allHabits = [];
+    let todayLogs = [];
+    const today = new Date().toISOString().split('T')[0];
+ 
+    // ── CURSOR ──
+    const cur = document.getElementById('cursor'), rng = document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+    (function loop(){cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;rng.style.left=rx+'px';rng.style.top=ry+'px';requestAnimationFrame(loop);})();
+ 
+    // ── THEME ──
+    const tt = document.getElementById('themeToggle');
+    let dark = true;
+    tt.addEventListener('click',()=>{ dark=!dark; document.documentElement.setAttribute('data-theme',dark?'dark':'light'); tt.textContent=dark?'☀️':'🌙'; });
+ 
+    // ── SCREEN CONTROL ──
+    function showScreen(name) {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('usernameScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'none';
+      if (name === 'auth') document.getElementById('authScreen').style.display = 'flex';
+      else if (name === 'username') document.getElementById('usernameScreen').style.display = 'flex';
+      else if (name === 'app') { document.getElementById('mainApp').style.display = 'block'; }
+    }
+ 
+    function showMsg(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'msg' + (text ? ' ' + type : '');
+    }
+ 
+    function toggleAuth() {
+      const l = document.getElementById('loginForm'), s = document.getElementById('signupForm');
+      l.style.display = l.style.display==='none'?'block':'none';
+      s.style.display = s.style.display==='none'?'block':'none';
+      showMsg('authMsg','','');
+    }
+ 
+    // ── AUTH FUNCTIONS ──
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      if (!email||!pass) return showMsg('authMsg','Fill in all fields.','error');
+      showMsg('authMsg','Signing in...','success');
+      const {data,error} = await sb.auth.signInWithPassword({email,password:pass});
+      if (error) return showMsg('authMsg',error.message,'error');
+      USER = data.user;
+      await loadProfileAndRoute();
+    }
+ 
+    async function doSignup() {
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const pass = document.getElementById('signupPassword').value;
+      if (!name||!email||!pass) return showMsg('authMsg','Fill in all fields.','error');
+      showMsg('authMsg','Creating account...','success');
+      const {data,error} = await sb.auth.signUp({email,password:pass});
+      if (error) return showMsg('authMsg',error.message,'error');
+      if (!data.user) return showMsg('authMsg','Signup failed, try again.','error');
+      USER = data.user;
+      // insert profile
+      const {error:pe} = await sb.from('profiles').insert({id:USER.id,display_name:name});
+      if (pe && pe.code !== '23505') return showMsg('authMsg','Profile error: '+pe.message,'error');
+      PROFILE = {id:USER.id, display_name:name, username:null};
+      showScreen('username');
+    }
+ 
+    async function doSaveUsername() {
+      const raw = document.getElementById('usernameInput').value.trim();
+      const username = raw.toLowerCase().replace(/[^a-z0-9_]/g,'');
+      if (!username||username.length<3) return showMsg('usernameMsg','Min 3 chars, letters/numbers/underscore only.','error');
+      if (!USER) {
+        const {data:{session}} = await sb.auth.getSession();
+        if (!session) return showMsg('usernameMsg','Session expired. Please sign in again.','error');
+        USER = session.user;
+      }
+      showMsg('usernameMsg','Saving...','success');
+      const {error} = await sb.from('profiles').update({username}).eq('id',USER.id);
+      if (error) {
+        if (error.code==='23505') return showMsg('usernameMsg','Username taken, try another.','error');
+        return showMsg('usernameMsg',error.message,'error');
+      }
+      PROFILE = {...(PROFILE||{}), id:USER.id, username};
+      launchApp();
+    }
+ 
+    async function doLogout() {
+      await sb.auth.signOut();
+      USER = null; PROFILE = null; allHabits = []; todayLogs = [];
+      showScreen('auth');
+    }
+ 
+    // ── PROFILE + ROUTING ──
+    async function loadProfileAndRoute() {
+      const {data} = await sb.from('profiles').select('*').eq('id',USER.id).single();
+      PROFILE = data;
+      if (!data?.username) showScreen('username');
+      else launchApp();
+    }
+ 
+    function launchApp() {
+      document.getElementById('topbarUser').textContent = '@'+(PROFILE?.username||'');
+      showScreen('app');
+      loadDashboard();
+    }
+ 
+    // ── INIT: check existing session on page load ──
+    (async () => {
+      const {data:{session}} = await sb.auth.getSession();
+      if (session?.user) {
+        USER = session.user;
+        await loadProfileAndRoute();
+      } else {
+        showScreen('auth');
+      }
+    })();
+ 
+    // ── TABS ──
+    function switchTab(tab) {
+      document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['dashboard','friends','feed'][i]===tab));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+tab).classList.add('active');
+      if (tab==='friends') loadFriends();
+      if (tab==='feed') loadFeed();
+    }
+ 
+    // ── DASHBOARD ──
+    async function loadDashboard() {
+      const [{data:habits},{data:logs}] = await Promise.all([
+        sb.from('habits').select('*').eq('user_id',USER.id).order('created_at'),
+        sb.from('logs').select('*').eq('user_id',USER.id).eq('done_on',today)
+      ]);
+      allHabits = habits||[]; todayLogs = logs||[];
+      renderHabits();
+      renderCalendar();
+    }
+ 
+    function renderHabits() {
+      const list = document.getElementById('habitsList');
+      if (!allHabits.length) {
+        list.innerHTML='<div class="empty"><strong>No habits yet.</strong>Add your first one above.</div>';
+        ['statStreak','statTotal','statToday'].forEach(id=>document.getElementById(id).textContent='0');
+        return;
+      }
+      const doneIds = new Set(todayLogs.map(l=>l.habit_id));
+      list.innerHTML = allHabits.map(h=>{
+        const done = doneIds.has(h.id);
+        return `<div class="habit-row">
+          <div class="habit-check ${done?'done':''}" onclick="toggleHabit('${h.id}',${done})">${done?'✓':''}</div>
+          <span class="habit-name">${esc(h.name)}</span>
+          <span class="habit-streak" id="streak-${h.id}">—</span>
+          <button class="habit-del" onclick="deleteHabit('${h.id}')">×</button>
+        </div>`;
+      }).join('');
+      document.getElementById('statTotal').textContent = allHabits.length;
+      document.getElementById('statToday').textContent = doneIds.size;
+      loadStreaks();
+    }
+ 
+    async function loadStreaks() {
+      for (const h of allHabits) {
+        const {data:logs} = await sb.from('logs').select('done_on').eq('habit_id',h.id).order('done_on',{ascending:false}).limit(60);
+        const el = document.getElementById('streak-'+h.id);
+        if (el) { const s=calcStreak(logs||[]); el.textContent=s+(s===1?' day':' days'); }
+      }
+      const {data:logs} = await sb.from('logs').select('done_on').eq('user_id',USER.id).order('done_on',{ascending:false}).limit(200);
+      document.getElementById('statStreak').textContent = calcOverallStreak(logs||[]);
+    }
+ 
+    function calcStreak(logs) {
+      const dates = logs.map(l=>l.done_on).sort().reverse();
+      let streak=0, check=today;
+      for (const d of dates) { if(d===check){streak++;check=prevDay(check);}else if(d<check)break; }
+      return streak;
+    }
+ 
+    function calcOverallStreak(logs) {
+      const days=[...new Set(logs.map(l=>l.done_on))].sort().reverse();
+      let streak=0,check=today;
+      for (const d of days){if(d===check){streak++;check=prevDay(check);}else if(d<check)break;}
+      return streak;
+    }
+ 
+    function prevDay(s){const d=new Date(s);d.setDate(d.getDate()-1);return d.toISOString().split('T')[0];}
+ 
+    async function renderCalendar() {
+      const days=[];
+      for(let i=27;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().split('T')[0]);}
+      const {data:logs} = await sb.from('logs').select('done_on,habit_id').eq('user_id',USER.id).gte('done_on',days[0]);
+      const logMap={};(logs||[]).forEach(l=>{logMap[l.done_on]=(logMap[l.done_on]||0)+1;});
+      const total=allHabits.length||1;
+      const grid=document.getElementById('calendarGrid');
+      const labels=document.getElementById('calLabels');
+      const dayNames=['Su','Mo','Tu','We','Th','Fr','Sa'];
+      grid.innerHTML=days.map(d=>{const pct=(logMap[d]||0)/total;const cls=pct===0?'':pct<0.5?'partial':'full';return `<div class="cal-day ${cls} ${d===today?'today':''}" title="${d}"></div>`;}).join('');
+      labels.innerHTML=days.map(d=>`<div class="cal-label">${dayNames[new Date(d+'T12:00:00').getDay()]}</div>`).join('');
+    }
+ 
+    async function addHabit(){
+      const input=document.getElementById('newHabitInput');
+      const name=input.value.trim();if(!name)return;
+      const {data,error}=await sb.from('habits').insert({name,user_id:USER.id}).select().single();
+      if(!error){input.value='';allHabits.push(data);renderHabits();}
+    }
+ 
+    async function deleteHabit(id){
+      await sb.from('habits').delete().eq('id',id);
+      allHabits=allHabits.filter(h=>h.id!==id);renderHabits();
+    }
+ 
+    async function toggleHabit(habitId,isDone){
+      if(isDone){
+        await sb.from('logs').delete().eq('habit_id',habitId).eq('done_on',today);
+        todayLogs=todayLogs.filter(l=>l.habit_id!==habitId);
+      } else {
+        const {data}=await sb.from('logs').insert({habit_id:habitId,user_id:USER.id,done_on:today}).select().single();
+        if(data)todayLogs.push(data);
+      }
+      renderHabits();renderCalendar();
+    }
+ 
+    // ── FRIENDS ──
+    async function searchUsers(){
+      const q=document.getElementById('searchInput').value.trim().toLowerCase();if(!q)return;
+      const [{data},{data:myF}]=await Promise.all([
+        sb.from('profiles').select('*').ilike('username','%'+q+'%').neq('id',USER.id).limit(8),
+        sb.from('friendships').select('following_id').eq('follower_id',USER.id)
+      ]);
+      const fIds=new Set((myF||[]).map(f=>f.following_id));
+      const el=document.getElementById('searchResults');
+      if(!data?.length){el.innerHTML='<div class="empty"><strong>No users found.</strong></div>';return;}
+      el.innerHTML=data.map(u=>`<div class="user-result">
+        <div class="avatar">${(u.username||'?')[0].toUpperCase()}</div>
+        <div class="user-info"><div class="user-username">@${esc(u.username)}</div><div class="user-display">${esc(u.display_name||'')}</div></div>
+        ${fIds.has(u.id)?`<button class="btn sm danger" onclick="unfollow('${u.id}',this)">Unfollow</button>`:`<button class="btn sm primary" onclick="follow('${u.id}',this)">Follow</button>`}
+      </div>`).join('');
+    }
+ 
+    async function follow(userId,btn){
+      await sb.from('friendships').insert({follower_id:USER.id,following_id:userId});
+      btn.textContent='Unfollow';btn.className='btn sm danger';btn.setAttribute('onclick',`unfollow('${userId}',this)`);loadFriends();
+    }
+    async function unfollow(userId,btn){
+      await sb.from('friendships').delete().eq('follower_id',USER.id).eq('following_id',userId);
+      btn.textContent='Follow';btn.className='btn sm primary';btn.setAttribute('onclick',`follow('${userId}',this)`);loadFriends();
+    }
+ 
+    async function loadFriends(){
+      const {data:fs}=await sb.from('friendships').select('following_id').eq('follower_id',USER.id);
+      const el=document.getElementById('friendsList');
+      if(!fs?.length){el.innerHTML='<div class="empty"><strong>No friends yet.</strong>Search above.</div>';return;}
+      const {data:profiles}=await sb.from('profiles').select('*').in('id',fs.map(f=>f.following_id));
+      el.innerHTML=(profiles||[]).map(u=>`<div class="user-result">
+        <div class="avatar">${(u.username||'?')[0].toUpperCase()}</div>
+        <div class="user-info"><div class="user-username">@${esc(u.username)}</div><div class="user-display">${esc(u.display_name||'')}</div></div>
+        <button class="btn sm danger" onclick="unfollow('${u.id}',this)">Unfollow</button>
+      </div>`).join('');
+    }
+ 
+    async function loadFeed(){
+      const el=document.getElementById('feedList');
+      const {data:fs}=await sb.from('friendships').select('following_id').eq('follower_id',USER.id);
+      if(!fs?.length){el.innerHTML='<div class="empty"><strong>Feed is empty.</strong>Follow some friends first.</div>';return;}
+      const ids=fs.map(f=>f.following_id);
+      const past14=[];for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);past14.push(d.toISOString().split('T')[0]);}
+      const [{data:profiles},{data:habits},{data:logs}]=await Promise.all([
+        sb.from('profiles').select('*').in('id',ids),
+        sb.from('habits').select('*').in('user_id',ids),
+        sb.from('logs').select('*').in('user_id',ids).gte('done_on',past14[0])
+      ]);
+      const logSet=new Set((logs||[]).map(l=>l.habit_id+'_'+l.done_on));
+      el.innerHTML=(profiles||[]).map(p=>{
+        const uh=(habits||[]).filter(h=>h.user_id===p.id);if(!uh.length)return'';
+        return `<div class="feed-card">
+          <div class="feed-header"><div class="avatar">${(p.username||'?')[0].toUpperCase()}</div><div><div class="feed-name">${esc(p.display_name||p.username)}</div><div class="feed-username">@${esc(p.username)}</div></div></div>
+          <div class="feed-habits">${uh.map(h=>`<div><div class="feed-habit-name">${esc(h.name)}</div><div class="mini-grid">${past14.map(d=>`<div class="mini-day ${logSet.has(h.id+'_'+d)?'done':''}"></div>`).join('')}</div></div>`).join('')}</div>
+        </div>`;
+      }).join('')||'<div class="empty"><strong>Nothing yet.</strong>Friends haven\'t logged habits.</div>';
+    }
+ 
+    function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  </script>
+</body>
+</html>
