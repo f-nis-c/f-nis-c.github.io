@@ -135,13 +135,64 @@
  
     /* calendar */
     .calendar-wrap { margin-top: 3rem; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 1rem; }
-    .cal-day { aspect-ratio: 1; border-radius: 2px; background: var(--surface); border: 1px solid var(--border); transition: background 0.2s; }
-    .cal-day.partial { background: rgba(126,184,164,0.25); border-color: rgba(126,184,164,0.4); }
-    .cal-day.full { background: var(--done); border-color: var(--done); }
+    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .cal-day {
+      aspect-ratio: 1; border-radius: 2px;
+      background: var(--surface); border: 1px solid var(--border);
+      position: relative; overflow: hidden; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .cal-day:hover { border-color: var(--accent); }
     .cal-day.today { outline: 1px solid var(--accent); outline-offset: 1px; }
+    .cal-day .day-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cal-day .day-color { width: 100%; height: 100%; display: block; }
+    .cal-day .day-share {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center;
+      font-size: 0.7rem; color: #fff; letter-spacing: 0.05em;
+    }
+    .cal-day:hover .day-share { display: flex; }
     .cal-labels { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-top: 0.4rem; }
     .cal-label { font-size: 0.6rem; letter-spacing: 0.08em; text-align: center; color: var(--muted); }
+ 
+    /* share modal */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 500; display: none;
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 2rem; width: min(440px, 100%);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-family: 'DM Serif Display', serif; font-size: 1.5rem; margin-bottom: 0.4rem; }
+    .modal-title em { font-style: italic; color: var(--accent); }
+    .modal-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .modal-type-tabs { display: flex; gap: 0; border: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .modal-tab { flex: 1; padding: 0.55rem; font-family: 'DM Sans', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; border: none; border-right: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .modal-tab:last-child { border-right: none; }
+    .modal-tab.active { background: var(--bg); color: var(--accent); }
+    .modal-preview { border: 1px solid var(--border); background: var(--bg); padding: 1rem; margin-bottom: 1rem; min-height: 80px; }
+    .modal-preview-day { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .modal-habit-chip { display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; border: 1px solid var(--border); font-size: 0.78rem; }
+    .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .modal-cal-mini { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+    .modal-cal-cell { aspect-ratio: 1; border-radius: 1px; }
+    .caption-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 300; padding: 0.65rem 0.9rem; outline: none; margin-bottom: 0.75rem; transition: border-color 0.2s; resize: none; }
+    .caption-input:focus { border-color: var(--accent); }
+    .photo-upload-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .photo-preview { width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--border); border-radius: 2px; display: none; }
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+ 
+    /* feed post card extras */
+    .post-img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 2px; margin-bottom: 1rem; }
+    .post-caption { font-size: 0.88rem; color: var(--text); margin-bottom: 1rem; line-height: 1.6; }
+    .post-time { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; }
  
     /* stats */
     .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 2rem; }
@@ -246,7 +297,10 @@
         </div>
         <div class="habits-list" id="habitsList"><div class="loading">Loading...</div></div>
         <div class="calendar-wrap">
-          <div class="section-label">Last 28 days</div>
+          <div class="calendar-header">
+            <div class="section-label" style="margin-bottom:0;">Last 28 days</div>
+            <button class="btn sm primary" onclick="openShareModal('calendar')">Share calendar</button>
+          </div>
           <div class="calendar-grid" id="calendarGrid"></div>
           <div class="cal-labels" id="calLabels"></div>
         </div>
@@ -269,6 +323,30 @@
       <div class="view" id="view-feed">
         <div class="section-label">Friends' progress</div>
         <div id="feedList"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- SHARE MODAL -->
+  <div class="modal-backdrop" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+    <div class="modal">
+      <h2 class="modal-title">Share to <em>feed.</em></h2>
+      <p class="modal-sub">Your friends will see this in their feed.</p>
+      <div class="modal-type-tabs">
+        <button class="modal-tab active" id="tab-day" onclick="setShareType('day')">Today's habits</button>
+        <button class="modal-tab" id="tab-calendar" onclick="setShareType('calendar')">Streak calendar</button>
+      </div>
+      <div class="modal-preview" id="sharePreview"></div>
+      <textarea class="caption-input" id="shareCaption" placeholder="Add a caption..." rows="2"></textarea>
+      <div class="photo-upload-row">
+        <button class="btn sm" onclick="document.getElementById('sharePhotoInput').click()">+ Photo</button>
+        <input type="file" id="sharePhotoInput" class="hidden-file" accept="image/*" onchange="previewSharePhoto(this)"/>
+        <img id="sharePhotoPreview" class="photo-preview"/>
+        <button class="btn sm danger" id="removePhotoBtn" style="display:none;" onclick="removeSharePhoto()">Remove</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeShareModal()">Cancel</button>
+        <button class="btn primary" onclick="doShare()">Post</button>
       </div>
     </div>
   </div>
@@ -602,9 +680,13 @@
     }
  
     function calcStreak(logs) {
-      const dates = logs.map(l=>l.done_on).sort().reverse();
+      if(!logs.length) return 0;
+      const dates = [...new Set(logs.map(l=>l.done_on))].sort().reverse();
       let streak=0, check=today;
-      for (const d of dates) { if(d===check){streak++;check=prevDay(check);}else if(d<check)break; }
+      for(const d of dates){
+        if(d===check){streak++;check=prevDay(check);}
+        else if(d<check)break;
+      }
       return streak;
     }
  
@@ -628,6 +710,126 @@
       const dayNames=['Su','Mo','Tu','We','Th','Fr','Sa'];
       grid.innerHTML=days.map(d=>{const pct=(logMap[d]||0)/total;const cls=pct===0?'':pct<0.5?'partial':'full';return `<div class="cal-day ${cls} ${d===today?'today':''}" title="${d}"></div>`;}).join('');
       labels.innerHTML=days.map(d=>`<div class="cal-label">${dayNames[new Date(d+'T12:00:00').getDay()]}</div>`).join('');
+    }
+ 
+    async function renderCalendar() {
+      const days=[];
+      for(let i=27;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().split('T')[0]);}
+      const {data:logs} = await sb.from('logs').select('done_on,habit_id').eq('user_id',USER.id).gte('done_on',days[0]);
+      const logMap={};
+      (logs||[]).forEach(l=>{if(!logMap[l.done_on])logMap[l.done_on]=[];logMap[l.done_on].push(l.habit_id);});
+      const habitMap={};allHabits.forEach(h=>{habitMap[h.id]=h;});
+      const total=allHabits.length||1;
+      const grid=document.getElementById('calendarGrid');
+      const labels=document.getElementById('calLabels');
+      const dayNames=['Su','Mo','Tu','We','Th','Fr','Sa'];
+      grid.innerHTML=days.map(d=>{
+        const done=logMap[d]||[];
+        const pct=done.length/total;
+        const isToday=d===today;
+        if(!done.length) return `<div class="cal-day ${isToday?'today':''}" title="${d}" onclick="openShareModal('day','${d}')"><div class="day-share">share</div></div>`;
+        const withImg=done.map(id=>habitMap[id]).find(h=>h?.image_url);
+        const color=(habitMap[done[0]]?.color)||'#7eb8a4';
+        const op=pct<0.5?0.45:1;
+        if(withImg) return `<div class="cal-day ${isToday?'today':''}" title="${d}·${done.length}/${total}" onclick="openShareModal('day','${d}')"><img class="day-img" src="${esc(withImg.image_url)}" style="opacity:${op}"/><div class="day-share">share</div></div>`;
+        return `<div class="cal-day ${isToday?'today':''}" title="${d}·${done.length}/${total}" onclick="openShareModal('day','${d}')"><div class="day-color" style="background:${color};opacity:${op};width:100%;height:100%;"></div><div class="day-share">share</div></div>`;
+      }).join('');
+      labels.innerHTML=days.map(d=>`<div class="cal-label">${dayNames[new Date(d+'T12:00:00').getDay()]}</div>`).join('');
+    }
+ 
+    // ── SHARE ──
+    let shareType = 'day';
+    let shareDate = today;
+    let sharePhotoFile = null;
+ 
+    function openShareModal(type, date) {
+      shareType = type || 'day';
+      shareDate = date || today;
+      document.getElementById('tab-day').classList.toggle('active', shareType==='day');
+      document.getElementById('tab-calendar').classList.toggle('active', shareType==='calendar');
+      document.getElementById('shareCaption').value = '';
+      removeSharePhoto();
+      renderSharePreview();
+      document.getElementById('shareModal').classList.add('open');
+    }
+ 
+    function closeShareModal() {
+      document.getElementById('shareModal').classList.remove('open');
+    }
+ 
+    function setShareType(type) {
+      shareType = type;
+      document.getElementById('tab-day').classList.toggle('active', type==='day');
+      document.getElementById('tab-calendar').classList.toggle('active', type==='calendar');
+      renderSharePreview();
+    }
+ 
+    function renderSharePreview() {
+      const el = document.getElementById('sharePreview');
+      if (shareType === 'day') {
+        const doneLogs = todayLogs.filter(l=>l.done_on===shareDate||shareDate===today);
+        const doneHabits = doneLogs.map(l=>allHabits.find(h=>h.id===l.habit_id)).filter(Boolean);
+        if (!doneHabits.length) { el.innerHTML='<p style="font-size:0.8rem;color:var(--muted)">No habits completed on this day.</p>'; return; }
+        el.innerHTML = `<div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">${shareDate}</div>
+          <div class="modal-preview-day">${doneHabits.map(h=>`<div class="modal-habit-chip"><div class="chip-dot" style="background:${h.color||'#7eb8a4'}"></div>${esc(h.name)}</div>`).join('')}</div>`;
+      } else {
+        el.innerHTML = `<div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Your last 28 days</div>
+          <div id="modalCalMini" class="modal-cal-mini"></div>`;
+        buildMiniCal();
+      }
+    }
+ 
+    async function buildMiniCal() {
+      const days=[];for(let i=27;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().split('T')[0]);}
+      const {data:logs}=await sb.from('logs').select('done_on,habit_id').eq('user_id',USER.id).gte('done_on',days[0]);
+      const logMap={};(logs||[]).forEach(l=>{if(!logMap[l.done_on])logMap[l.done_on]=[];logMap[l.done_on].push(l.habit_id);});
+      const habitMap={};allHabits.forEach(h=>{habitMap[h.id]=h;});
+      const total=allHabits.length||1;
+      const el=document.getElementById('modalCalMini');
+      if(!el)return;
+      el.innerHTML=days.map(d=>{
+        const done=logMap[d]||[];if(!done.length)return`<div class="modal-cal-cell" style="background:var(--border)"></div>`;
+        const color=(habitMap[done[0]]?.color)||'#7eb8a4';
+        const op=done.length/total<0.5?0.4:1;
+        return`<div class="modal-cal-cell" style="background:${color};opacity:${op}"></div>`;
+      }).join('');
+    }
+ 
+    function previewSharePhoto(input) {
+      const file = input.files[0]; if(!file)return;
+      sharePhotoFile = file;
+      const preview = document.getElementById('sharePhotoPreview');
+      const reader = new FileReader();
+      reader.onload = e=>{ preview.src=e.target.result; preview.style.display='block'; document.getElementById('removePhotoBtn').style.display='inline-flex'; };
+      reader.readAsDataURL(file);
+    }
+ 
+    function removeSharePhoto() {
+      sharePhotoFile = null;
+      const preview = document.getElementById('sharePhotoPreview');
+      preview.src=''; preview.style.display='none';
+      document.getElementById('removePhotoBtn').style.display='none';
+      document.getElementById('sharePhotoInput').value='';
+    }
+ 
+    async function doShare() {
+      const caption = document.getElementById('shareCaption').value.trim();
+      let photoUrl = null;
+      if (sharePhotoFile) {
+        const ext = sharePhotoFile.name.split('.').pop();
+        const path = `${USER.id}/${Date.now()}.${ext}`;
+        const {error} = await sb.storage.from('post-photos').upload(path, sharePhotoFile, {upsert:true});
+        if (!error) {
+          const {data:u} = sb.storage.from('post-photos').getPublicUrl(path);
+          photoUrl = u.publicUrl;
+        }
+      }
+      const content = shareType==='day'
+        ? {date:shareDate, habits:todayLogs.map(l=>({id:l.habit_id,name:allHabits.find(h=>h.id===l.habit_id)?.name}))}
+        : {type:'calendar'};
+      await sb.from('posts').insert({user_id:USER.id, post_type:shareType, content, image_url:photoUrl, caption});
+      closeShareModal();
+      alert('Posted!');
     }
  
     async function addHabit(){
@@ -697,23 +899,61 @@
       if(!fs?.length){el.innerHTML='<div class="empty"><strong>Feed is empty.</strong>Follow some friends first.</div>';return;}
       const ids=fs.map(f=>f.following_id);
       const past14=[];for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);past14.push(d.toISOString().split('T')[0]);}
-      const [{data:profiles},{data:habits},{data:logs}]=await Promise.all([
+      const [{data:profiles},{data:habits},{data:logs},{data:posts}]=await Promise.all([
         sb.from('profiles').select('*').in('id',ids),
         sb.from('habits').select('*').in('user_id',ids),
-        sb.from('logs').select('*').in('user_id',ids).gte('done_on',past14[0])
+        sb.from('logs').select('*').in('user_id',ids).gte('done_on',past14[0]),
+        sb.from('posts').select('*').in('user_id',ids).order('created_at',{ascending:false}).limit(20)
       ]);
       const logSet=new Set((logs||[]).map(l=>l.habit_id+'_'+l.done_on));
-      el.innerHTML=(profiles||[]).map(p=>{
-        const uh=(habits||[]).filter(h=>h.user_id===p.id);if(!uh.length)return'';
-        return `<div class="feed-card">
-          <div class="feed-header"><div class="avatar">${(p.username||'?')[0].toUpperCase()}</div><div><div class="feed-name">${esc(p.display_name||p.username)}</div><div class="feed-username">@${esc(p.username)}</div></div></div>
-          <div class="feed-habits">${uh.map(h=>`<div><div class="feed-habit-name">${esc(h.name)}</div><div class="mini-grid">${past14.map(d=>`<div class="mini-day ${logSet.has(h.id+'_'+d)?'done':''}"></div>`).join('')}</div></div>`).join('')}</div>
-        </div>`;
-      }).join('')||'<div class="empty"><strong>Nothing yet.</strong>Friends haven\'t logged habits.</div>';
+      const profileMap={};(profiles||[]).forEach(p=>{profileMap[p.id]=p;});
+ 
+      // merge posts + habit streaks into one feed, sorted by time
+      const feedItems = [];
+ 
+      // add posts
+      (posts||[]).forEach(post=>{
+        const profile = profileMap[post.user_id];
+        if(!profile)return;
+        feedItems.push({type:'post', time: new Date(post.created_at), post, profile});
+      });
+ 
+      // add one habit-streak card per friend
+      (profiles||[]).forEach(p=>{
+        const uh=(habits||[]).filter(h=>h.user_id===p.id);
+        if(!uh.length)return;
+        feedItems.push({type:'habits', time: new Date(0), profile:p, habits:uh});
+      });
+ 
+      feedItems.sort((a,b)=>b.time-a.time);
+ 
+      el.innerHTML = feedItems.map(item=>{
+        const p = item.profile;
+        const header = `<div class="feed-header"><div class="avatar">${(p.username||'?')[0].toUpperCase()}</div><div><div class="feed-name">${esc(p.display_name||p.username)}</div><div class="feed-username">@${esc(p.username)}</div></div></div>`;
+        if (item.type==='post') {
+          const post = item.post;
+          const timeStr = new Date(post.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+          let contentHtml = '';
+          if (post.post_type==='day' && post.content?.habits) {
+            contentHtml = `<div class="modal-preview-day" style="margin-bottom:0.75rem;">${(post.content.habits||[]).map(h=>`<div class="modal-habit-chip"><div class="chip-dot" style="background:var(--accent2)"></div>${esc(h.name||'')}</div>`).join('')}</div>`;
+          } else if (post.post_type==='calendar') {
+            contentHtml = `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Shared their streak calendar</p>`;
+          }
+          return `<div class="feed-card">
+            ${header}
+            ${post.image_url?`<img class="post-img" src="${esc(post.image_url)}"/>`:''}
+            ${post.caption?`<p class="post-caption">${esc(post.caption)}</p>`:''}
+            ${contentHtml}
+            <span class="post-time">${timeStr}</span>
+          </div>`;
+        } else {
+          const habitsHtml = item.habits.map(h=>`<div><div class="feed-habit-name">${esc(h.name)}</div><div class="mini-grid">${past14.map(d=>`<div class="mini-day ${logSet.has(h.id+'_'+d)?'done':''}" style="${logSet.has(h.id+'_'+d)?`background:${h.color||'var(--done)'}`:''}"></div>`).join('')}</div></div>`).join('');
+          return `<div class="feed-card">${header}<div class="feed-habits">${habitsHtml}</div></div>`;
+        }
+      }).join('') || '<div class="empty"><strong>Nothing yet.</strong>Friends haven\'t posted.</div>';
     }
  
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   </script>
 </body>
 </html>
- 
