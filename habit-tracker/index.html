@@ -607,15 +607,25 @@ async function login() {
 }
  
     sb.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        currentUser = session.user;
-        await loadProfile();
-      } else {
-        document.getElementById('authScreen').style.display = 'flex';
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('usernameScreen').style.display = 'none';
-      }
-    });
+  if (event === 'SIGNED_OUT') {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('usernameScreen').style.display = 'none';
+    return;
+  }
+  if (event === 'INITIAL_SESSION' && !session) {
+    document.getElementById('authScreen').style.display = 'flex';
+    return;
+  }
+  if (session?.user && event !== 'INITIAL_SESSION') {
+    currentUser = session.user;
+    await loadProfile();
+  }
+  if (event === 'INITIAL_SESSION' && session?.user) {
+    currentUser = session.user;
+    await loadProfile();
+  }
+});
  
     async function loadProfile() {
       const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
