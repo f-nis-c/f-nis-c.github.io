@@ -66,7 +66,6 @@
     .stat-chip .num{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--accent);line-height:1;}
     .stat-chip .lbl{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem;}
 
-    /* table */
     .table-wrap{overflow-x:auto;border:1px solid var(--border);margin-bottom:2rem;}
     table{width:100%;border-collapse:collapse;font-size:0.82rem;}
     th{background:var(--surface);padding:0.65rem 1rem;text-align:left;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
@@ -227,17 +226,15 @@
         </div>
       </div>
 
-      
-      <div class="tab-view" id="tab-algorithms">
-        <div class="section-label">Run algorithms</div>
+      <div class="tab-view" id="tab-algorithms" style="margin: 0 -2rem;">
         <div id="hfContainer">
-          <div class="hf-placeholder" id="hfPlaceholder">
-            <h3>Algorithms run on <em style="color:var(--accent)">HF Spaces.</em></h3>
-            <p style="max-width:400px;">The full WEKA-style engine — decision tree, KNN, naive bayes, random forest, k-means, PCA, association rules — runs on a Python backend hosted on Hugging Face Spaces.</p>
-            <input type="text" id="hfUrl" value="https://fnisc-ai-analyst.hf.space" class="btn" style="width:100%;max-width:480px;text-align:left;margin-top:0.5rem;"/>
-            <button class="btn primary" onclick="loadHfSpace()">Load space ↗</button>
-            <p style="font-size:0.75rem;margin-top:0.5rem;">Don't have it set up yet? <a href="https://huggingface.co/spaces" target="_blank" style="color:var(--accent);">Create a Space →</a></p>
-          </div>
+          <iframe
+            id="hfFrame"
+            src="https://fnisc-ai-analyst.hf.space"
+            style="width:100%;height:calc(100vh - 160px);border:1px solid var(--border);display:block;"
+            frameborder="0"
+            allow="clipboard-write">
+          </iframe>
         </div>
       </div>
 
